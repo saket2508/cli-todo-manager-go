@@ -1,3 +1,5 @@
+// contains types and interfaces
+
 package todo
 
 import (
@@ -6,33 +8,47 @@ import (
 	"time"
 )
 
-// Todo represents a todo item with all its properties
 type Todo struct {
 	ID          int64      `json:"id"`
 	Text        string     `json:"text"`
-	Done        bool       `json:"done"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
-	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	Done        bool       `json:"done"`
+	CompletedAt *time.Time `json:"completed_at"`
 }
 
-// Validate checks if a todo has valid data
-func (t *Todo) Validate() error {
-	if strings.TrimSpace(t.Text) == "" {
-		return errors.New("todo text cannot be empty")
+// validate todo contents
+func (t Todo) Validate() error {
+	text := strings.TrimSpace(t.Text)
+	if text == "" {
+		return errors.New("text cannot be empty")
 	}
-	if len(t.Text) > 4096 { // 4KB limit as per DESIGN.md
-		return errors.New("todo text is too long (max 4096 characters)")
+	if len(text) > 4096 { // 4KB text limit
+		return errors.New("text too long (max 4096 characters)")
 	}
 	return nil
 }
 
-// Store defines the interface for todo persistence
-type Store interface {
-	Create(text string) (Todo, error)
-	List(all bool, doneOnly bool) ([]Todo, error)
-	Get(id int64) (Todo, error)
-	UpdateText(id int64, text string) (Todo, error)
-	ToggleDone(id int64) (Todo, error)
-	Delete(id int64) error
+// check if todo is marked done
+func (t Todo) IsCompleted() bool {
+	return t.Done && t.CompletedAt != nil
+}
+
+// sets done=true and completed timestamp
+func (t *Todo) MarkCompleted() {
+	t.Done = true
+	now := time.Now()
+	t.CompletedAt = &now
+	t.UpdatedAt = now
+}
+
+func (t *Todo) MarkIncomplete() {
+	t.Done = false
+	t.CompletedAt = nil
+	t.UpdatedAt = time.Now()
+}
+
+func (t *Todo) UpdateText(newText string) {
+	t.Text = strings.TrimSpace(newText)
+	t.UpdatedAt = time.Now()
 }
