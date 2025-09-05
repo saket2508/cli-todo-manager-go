@@ -1,2 +1,6 @@
+# remove build files
+todo-list
+
+# agents and design docs
 AGENTS.md
 DESIGN.md
