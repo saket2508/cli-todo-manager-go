@@ -1,3 +1,5 @@
+// Interface for storing todos in memory
+
 package store
 
 import "todo-list/internal/todo"

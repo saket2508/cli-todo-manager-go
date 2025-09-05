@@ -1,5 +1,5 @@
 // this is the CLI entry point
-package main
+package todo
 
 import (
 	"flag"
@@ -12,7 +12,7 @@ import (
 	"todo-list/internal/store/file"
 )
 
-func main() {
+func RunCLI() {
 	// Define flags
 	var dataPath = flag.String("data", "", "Path to data file (default: ~/.config/todo-list/todos.json)")
 	var jsonOutput = flag.Bool("json", false, "Output in JSON format")
@@ -156,4 +156,8 @@ func getDataPath(customPath string) string {
 		return filepath.Join(home, ".todo.json")
 	}
 	return filepath.Join(configDir, "todo-list", "todos.json")
+}
+
+func main() {
+	RunCLI()
 }
