@@ -1,5 +1,5 @@
 // FileStore implementation
-package file
+package internal
 
 import (
 	"encoding/json"
@@ -9,12 +9,11 @@ import (
 	"sort"
 	"sync"
 	"time"
-	"todo-list/internal/todo"
 )
 
 type FileStore struct {
 	filepath string
-	todos    []todo.Todo
+	todos    []Todo
 	nextId   int64
 	mu       sync.Mutex
 }
@@ -38,7 +37,7 @@ func (f *FileStore) loadFromFile() error {
 
 	// file does not exist, create it
 	if os.IsNotExist(err) {
-		f.todos = []todo.Todo{}
+		f.todos = []Todo{}
 		f.nextId = 1
 		return nil
 	}
@@ -51,7 +50,7 @@ func (f *FileStore) loadFromFile() error {
 	var data struct {
 		Version int64       `json:"version"`
 		NextID  int64       `json:"next_id"`
-		Items   []todo.Todo `json:"items"`
+		Items   []Todo `json:"items"`
 	}
 
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
@@ -79,7 +78,7 @@ func (f *FileStore) saveToFile() error {
 	data := struct {
 		Version int64       `json:"version"`
 		NextID  int64       `json:"next_id"`
-		Items   []todo.Todo `json:"items"`
+		Items   []Todo `json:"items"`
 	}{Version: 1, NextID: f.nextId, Items: f.todos}
 
 	encoder := json.NewEncoder(file)
@@ -92,11 +91,11 @@ func (f *FileStore) saveToFile() error {
 }
 
 // // Add Create, List, UpdateText, ToggleDone, Delete
-func (f *FileStore) Create(text string) (todo.Todo, error) {
+func (f *FileStore) Create(text string) (Todo, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	t := todo.Todo{
+	t := Todo{
 		ID:        f.nextId,
 		Text:      text,
 		CreatedAt: time.Now(),
@@ -105,24 +104,24 @@ func (f *FileStore) Create(text string) (todo.Todo, error) {
 	}
 
 	if err := t.Validate(); err != nil {
-		return todo.Todo{}, err
+		return Todo{}, err
 	}
 
 	f.todos = append(f.todos, t)
 	f.nextId++
 	if err := f.saveToFile(); err != nil {
-		return todo.Todo{}, err
+		return Todo{}, err
 	}
 
 	return t, nil
 }
 
 // Add Create, List, UpdateText, ToggleDone, Delete
-func (f *FileStore) List(all bool, doneOnly bool) ([]todo.Todo, error) {
+func (f *FileStore) List(all bool, doneOnly bool) ([]Todo, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	var result []todo.Todo
+	var result []Todo
 	for _, t := range f.todos {
 		if doneOnly && !t.Done {
 			continue
@@ -146,7 +145,7 @@ func (f *FileStore) List(all bool, doneOnly bool) ([]todo.Todo, error) {
 	return result, nil
 }
 
-func (f *FileStore) Get(id int64) (todo.Todo, error) {
+func (f *FileStore) Get(id int64) (Todo, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -155,10 +154,10 @@ func (f *FileStore) Get(id int64) (todo.Todo, error) {
 			return t, nil
 		}
 	}
-	return todo.Todo{}, fmt.Errorf("todo with id %d not found", id)
+	return Todo{}, fmt.Errorf("todo with id %d not found", id)
 }
 
-func (f *FileStore) UpdateText(id int64, text string) (todo.Todo, error) {
+func (f *FileStore) UpdateText(id int64, text string) (Todo, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -166,18 +165,18 @@ func (f *FileStore) UpdateText(id int64, text string) (todo.Todo, error) {
 		if t.ID == id {
 			f.todos[i].UpdateText(text)
 			if err := f.todos[i].Validate(); err != nil {
-				return todo.Todo{}, err
+				return Todo{}, err
 			}
 			if err := f.saveToFile(); err != nil {
-				return todo.Todo{}, err
+				return Todo{}, err
 			}
 			return f.todos[i], nil
 		}
 	}
-	return todo.Todo{}, fmt.Errorf("todo with id %d not found", id)
+	return Todo{}, fmt.Errorf("todo with id %d not found", id)
 }
 
-func (f *FileStore) ToggleDone(id int64) (todo.Todo, error) {
+func (f *FileStore) ToggleDone(id int64) (Todo, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -189,12 +188,12 @@ func (f *FileStore) ToggleDone(id int64) (todo.Todo, error) {
 				f.todos[i].MarkCompleted()
 			}
 			if err := f.saveToFile(); err != nil {
-				return todo.Todo{}, err
+				return Todo{}, err
 			}
 			return f.todos[i], nil
 		}
 	}
-	return todo.Todo{}, fmt.Errorf("todo with id %d not found", id)
+	return Todo{}, fmt.Errorf("todo with id %d not found", id)
 }
 
 func (f *FileStore) Delete(id int64) error {

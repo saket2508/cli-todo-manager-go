@@ -1,6 +1,6 @@
 // contains types and interfaces
 
-package todo
+package internal
 
 import (
 	"errors"
